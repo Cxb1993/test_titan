@@ -4,7 +4,7 @@
 # $Id: Makefile.am 134 2007-06-07 20:05:52Z dkumar $
 #
 
-TITAN_SRC_PATH=/home/hossein/titan/discrete_adjoint/src/
+TITAN_SRC_PATH=/dinesh1/data/users/haghakha/TITAN2D/discrete_adjoint/src/
 
 bin_PROGRAMS = titan
 

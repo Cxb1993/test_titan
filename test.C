@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
 	unsigned EL_TABLE_SIZE = 500;
 
 	unsigned int max_unsigned_int_size = UINT_MAX;
-	double doublekeyrange[2] = { max_unsigned_int_size, max_unsigned_int_size };
+	double doublekeyrange[2] = { (double) max_unsigned_int_size, (double) max_unsigned_int_size };
 	double XRange[2] = { -2., 2. };
 	double YRange[2] = { -2., 2. };
 
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
 	timeprops.inittime(1, .01, .01, .01, 1.);
 
 	MapNames mapnames;
-	char gis_main[] = { "/home/hossein/titan/" };
+	char gis_main[] = { "/dinesh1/data/users/haghakha/TITAN2D" };
 	char gis_sub[] = { "test_titan" };
 	char gis_mapset[] = { "simple" };
 	char gis_map[] = { "simple" };
@@ -188,6 +188,8 @@ int main(int argc, char *argv[]) {
 	plot_ithm(El_Table);
 
 	meshplotter(El_Table, NodeTable, &matprops, &timeprops, &mapnames, 0.);
+
+	matprops.material_count = 0;
 
 	MPI_Finalize();
 	return (0);
