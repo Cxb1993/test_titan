@@ -152,8 +152,8 @@ int main(int argc, char *argv[]) {
 
 	calc_adjoint(&mesh_ctx, &prop_ctx);
 
-	const int test_elem = 4;
-	const int ind_neigh = 2;
+	const int test_elem = 15;
+	const int ind_neigh = 1;
 
 	print_ithm(El_Table, test_elem, ind_neigh);
 
@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
 
 		initialize_flow(El_Table);
 
-		const int perturb_elem = 15;
+		const int perturb_elem = 12;
 
 		perturb(El_Table, perturb_elem, i);
 
