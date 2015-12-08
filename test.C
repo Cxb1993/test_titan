@@ -44,22 +44,21 @@ struct Elem_Mini {
 	double kactxy;
 	double a;
 	Matrix<double, 4, 3> fluxes;
+	double hslope[2];
 };
 const double gravity = 10;
-void make_simple_grid(HashTable* NodeTable, HashTable* El_Table,
-		MatProps* matprops, TimeProps* timeprops, double *XRange,
-		double *YRange);
+void make_simple_grid(HashTable* NodeTable, HashTable* El_Table, MatProps* matprops,
+    TimeProps* timeprops, double *XRange, double *YRange);
 void initialize_flow(HashTable* El_Table);
 void prev_to_current_state(HashTable* El_Table);
 void set_ithm(HashTable* El_Table);
 void find_minmax_pos(HashTable* El_Table, double* minmax);
 void plot_ithm(HashTable* El_Table);
-void init_elem_vec(std::vector<Elem_Mini> &vec_elem, HashTable* NodeTable,
-		HashTable* El_Table, MatProps* matprops);
+void init_elem_vec(std::vector<Elem_Mini> &vec_elem, HashTable* NodeTable, HashTable* El_Table,
+    MatProps* matprops);
 void compute_flux(Elem_Mini &elem_mini);
 void perturb(HashTable* El_Table, int ithm, int state);
-void check_diff(std::vector<Elem_Mini> &vec_elem,
-		std::vector<Elem_Mini> &vec_elem1, int ithm);
+void check_diff(std::vector<Elem_Mini> &vec_elem, std::vector<Elem_Mini> &vec_elem1, int ithm);
 void print_ithm(HashTable* El_Table, int ithm, int ind_neigh);
 
 int main(int argc, char *argv[]) {
@@ -76,9 +75,8 @@ int main(int argc, char *argv[]) {
 
 	int material_count = 0;
 	char **matnames = NULL;
-	double intfrictang = PI * .25, bedfrictang = PI * .25, tanbedfric = tan(
-			bedfrictang), mu = 1000, rho = 1000, gamma = .1, frict_tiny = .1,
-			epsilon = .01;
+	double intfrictang = PI * .25, bedfrictang = PI * .25, tanbedfric = tan(bedfrictang), mu = 1000,
+	    rho = 1000, gamma = 1., frict_tiny = .1, epsilon = .01;
 
 	TimeProps timeprops;
 	timeprops.starttime = time(NULL);
@@ -93,8 +91,8 @@ int main(int argc, char *argv[]) {
 	mapnames.assign(gis_main, gis_sub, gis_mapset, gis_map, extramaps);
 	Initialize_GIS_data(gis_main, gis_sub, gis_mapset, gis_map);
 
-	MatProps matprops(material_count, matnames, intfrictang, &bedfrictang, mu,
-			rho, epsilon, gamma, frict_tiny, 1.0, 1.0, 1.0);
+	MatProps matprops(material_count, matnames, intfrictang, &bedfrictang, mu, rho, epsilon, gamma,
+	    frict_tiny, 1.0, 1.0, 1.0);
 	matprops.bedfrict = &bedfrictang;
 	matprops.tanbedfrict = &tanbedfric;
 	matprops.material_count = 1;
@@ -106,13 +104,10 @@ int main(int argc, char *argv[]) {
 	DISCHARGE discharge;
 	int orderflag = 1;
 
-	HashTable *NodeTable = new HashTable(doublekeyrange, NODE_TABLE_SIZE, 2017,
-			XRange, YRange, 0);
-	HashTable *El_Table = new HashTable(doublekeyrange, EL_TABLE_SIZE, 503,
-			XRange, YRange, 0);
+	HashTable *NodeTable = new HashTable(doublekeyrange, NODE_TABLE_SIZE, 2017, XRange, YRange, 0);
+	HashTable *El_Table = new HashTable(doublekeyrange, EL_TABLE_SIZE, 503, XRange, YRange, 0);
 
-	make_simple_grid(NodeTable, El_Table, &matprops, &timeprops, XRange,
-			YRange);
+	make_simple_grid(NodeTable, El_Table, &matprops, &timeprops, XRange, YRange);
 
 	initialize_flow(El_Table);
 
@@ -121,8 +116,8 @@ int main(int argc, char *argv[]) {
 	// we need this becaus in step function slope and fluxes ar being computed based on state_vars
 	prev_to_current_state(El_Table);
 
-	step(El_Table, NodeTable, 0, 0, &matprops, &timeprops, &pileprops,
-			&fluxprops, &statprops, &orderflag, &outline, &discharge, 1);
+	step(El_Table, NodeTable, 0, 0, &matprops, &timeprops, &pileprops, &fluxprops, &statprops,
+	    &orderflag, &outline, &discharge, 1);
 
 	print_Elem_Table(El_Table, NodeTable, 0, 0);
 
@@ -150,10 +145,10 @@ int main(int argc, char *argv[]) {
 
 	calc_jacobian(&mesh_ctx, &prop_ctx, &eleminfo);
 
-	calc_adjoint(&mesh_ctx, &prop_ctx);
+//	calc_adjoint(&mesh_ctx, &prop_ctx);
 
-	const int test_elem = 15;
-	const int ind_neigh = 1;
+	const int test_elem = 12;
+	const int ind_neigh = 2;
 
 	print_ithm(El_Table, test_elem, ind_neigh);
 
@@ -161,13 +156,13 @@ int main(int argc, char *argv[]) {
 
 	print_Elem_Table(El_Table, NodeTable, 0, 1);
 
-	for (int i = 0; i < NUM_STATE_VARS; ++i) {
+	for (int i = 0; i < 1; ++i) {
 
 		timeprops.inittime(1, .01, .01, .01, 1.);
 
 		initialize_flow(El_Table);
 
-		const int perturb_elem = 12;
+		const int perturb_elem = 10;
 
 		perturb(El_Table, perturb_elem, i);
 
@@ -175,8 +170,8 @@ int main(int argc, char *argv[]) {
 
 		setup_geoflow(El_Table, NodeTable, 0, 0, &matprops, &timeprops);
 
-		step(El_Table, NodeTable, 0, 0, &matprops, &timeprops, &pileprops,
-				&fluxprops, &statprops, &orderflag, &outline, &discharge, 1);
+		step(El_Table, NodeTable, 0, 0, &matprops, &timeprops, &pileprops, &fluxprops, &statprops,
+		    &orderflag, &outline, &discharge, 1);
 
 		std::vector<Elem_Mini> vec_elem1(16);
 		init_elem_vec(vec_elem1, NodeTable, El_Table, &matprops);
@@ -195,9 +190,8 @@ int main(int argc, char *argv[]) {
 	return (0);
 }
 
-void make_simple_grid(HashTable* NodeTable, HashTable* El_Table,
-		MatProps* matprops, TimeProps* timeprops, double *XRange,
-		double *YRange) {
+void make_simple_grid(HashTable* NodeTable, HashTable* El_Table, MatProps* matprops,
+    TimeProps* timeprops, double *XRange, double *YRange) {
 
 	BC* bcptr = new BC();
 	unsigned nkey = 2, node_key[9][2], key[2];
@@ -268,8 +262,8 @@ void make_simple_grid(HashTable* NodeTable, HashTable* El_Table,
 	int elm_loc[2] = { 0, 0 };
 	unsigned opposite_brother = 0;
 
-	Element* Quad9P = new Element(node_key, neigh, neighbor_proc, bcptr, 0,
-			elm_loc, 0., 0, &opposite_brother);
+	Element* Quad9P = new Element(node_key, neigh, neighbor_proc, bcptr, 0, elm_loc, 0., 0,
+	    &opposite_brother);
 
 	El_Table->add(node_key[8], Quad9P);
 
@@ -286,8 +280,7 @@ void make_simple_grid(HashTable* NodeTable, HashTable* El_Table,
 
 	ElemPtrList RefinedList;
 	RefinedList.add(Quad9P);
-	refine_neigh_update(El_Table, NodeTable, 0, 0, (void*) &RefinedList,
-			timeprops);
+	refine_neigh_update(El_Table, NodeTable, 0, 0, (void*) &RefinedList, timeprops);
 	RefinedList.trashlist();
 	htflush(El_Table, NodeTable, 2);
 
@@ -297,16 +290,13 @@ void make_simple_grid(HashTable* NodeTable, HashTable* El_Table,
 			refine(sons[i], El_Table, NodeTable, matprops, 0);
 			RefinedList.add(sons[i]);
 		}
-	refine_neigh_update(El_Table, NodeTable, 0, 0, (void*) &RefinedList,
-			timeprops);
+	refine_neigh_update(El_Table, NodeTable, 0, 0, (void*) &RefinedList, timeprops);
 
-	Element * secnd_gen_elm = (Element*) El_Table->lookup(
-			sons[1]->getson() + 3 * KEYLENGTH);
+	Element * secnd_gen_elm = (Element*) El_Table->lookup(sons[1]->getson() + 3 * KEYLENGTH);
 	RefinedList.add(secnd_gen_elm);
 	refine(secnd_gen_elm, El_Table, NodeTable, matprops, 0);
 
-	refine_neigh_update(El_Table, NodeTable, 0, 0, (void*) &RefinedList,
-			timeprops);
+	refine_neigh_update(El_Table, NodeTable, 0, 0, (void*) &RefinedList, timeprops);
 
 	HashEntryPtr currentPtr;
 	Element *Curr_El;
@@ -333,8 +323,8 @@ void make_simple_grid(HashTable* NodeTable, HashTable* El_Table,
 
 	find_minmax_pos(El_Table, minmax);
 
-	std::cout << "max x: " << minmax[1] << "  min x: " << minmax[0]
-			<< "  max y: " << minmax[3] << "  min_y: " << minmax[2] << "\n";
+	std::cout << "max x: " << minmax[1] << "  min x: " << minmax[0] << "  max y: " << minmax[3]
+	    << "  min_y: " << minmax[2] << "\n";
 }
 
 void initialize_flow(HashTable* El_Table) {
@@ -350,18 +340,15 @@ void initialize_flow(HashTable* El_Table) {
 				Curr_El = (Element*) (currentPtr->value);
 				currentPtr = currentPtr->next;
 				if (Curr_El->get_adapted_flag() > 0
-				/*&& *(Curr_El->get_coord())
-				 >= *(Curr_El->get_coord() + 1)*/) {
+				    && *(Curr_El->get_coord()) >= *(Curr_El->get_coord() + 1)) {
 					//*(Curr_El->get_kactxy()) = 1.;
 					for (int j = 0; j < NUM_STATE_VARS; ++j) {
-						*(Curr_El->get_prev_state_vars() + j) =
-								Curr_El->get_ithelem() * (j + 1);
+						*(Curr_El->get_prev_state_vars() + j) = Curr_El->get_ithelem() * (j + 1);
 					}
 
 				}
 			}
 		}
-
 }
 
 void prev_to_current_state(HashTable* El_Table) {
@@ -378,8 +365,7 @@ void prev_to_current_state(HashTable* El_Table) {
 				currentPtr = currentPtr->next;
 				if (Curr_El->get_adapted_flag() > 0) {
 					for (int j = 0; j < NUM_STATE_VARS; ++j)
-						*(Curr_El->get_state_vars() + j) =
-								*(Curr_El->get_prev_state_vars() + j);
+						*(Curr_El->get_state_vars() + j) = *(Curr_El->get_prev_state_vars() + j);
 
 				}
 			}
@@ -458,8 +444,8 @@ void plot_ithm(HashTable* El_Table) {
 		}
 }
 
-void init_elem_vec(std::vector<Elem_Mini> &vec_elem, HashTable* NodeTable,
-		HashTable* El_Table, MatProps* matprops) {
+void init_elem_vec(std::vector<Elem_Mini> &vec_elem, HashTable* NodeTable, HashTable* El_Table,
+    MatProps* matprops) {
 
 	HashEntryPtr currentPtr;
 	Element *Curr_El;
@@ -479,29 +465,27 @@ void init_elem_vec(std::vector<Elem_Mini> &vec_elem, HashTable* NodeTable,
 				if (Curr_El->get_adapted_flag() > 0) {
 
 					double flux[4][NUM_STATE_VARS];
-					get_flux(El_Table, NodeTable, Curr_El->pass_key(), matprops,
-							0, flux);
+					get_flux(El_Table, NodeTable, Curr_El->pass_key(), matprops, 0, flux);
 
 					for (int indi = 0; indi < 4; ++indi)
 						for (int indj = 0; indj < NUM_STATE_VARS; ++indj)
-							vec_elem[count].fluxes(indi, indj) =
-									flux[indi][indj];
+							vec_elem[count].fluxes(indi, indj) = flux[indi][indj];
 
 					vec_elem[count].kactxy = *(Curr_El->get_kactxy());
 					vec_elem[count].indx = count;
 					for (int j = 0; j < NUM_STATE_VARS; ++j)
-						vec_elem[count].prev_state[j] =
-								*(Curr_El->get_prev_state_vars() + j);
+						vec_elem[count].prev_state[j] = *(Curr_El->get_prev_state_vars() + j);
 					for (int j = 0; j < NUM_STATE_VARS; ++j)
-						vec_elem[count].state[j] = *(Curr_El->get_state_vars()
-								+ j);
+						vec_elem[count].state[j] = *(Curr_El->get_state_vars() + j);
 					compute_flux(vec_elem[count]);
+
+					for (int i = 0; i < DIMENSION; ++i)
+						vec_elem[count].hslope[i] = *(Curr_El->get_d_state_vars() + i * NUM_STATE_VARS);
 
 					++count;
 				}
 			}
 		}
-
 }
 
 void compute_flux(Elem_Mini &elem_mini) {
@@ -516,8 +500,7 @@ void compute_flux(Elem_Mini &elem_mini) {
 //	x_direction
 	elem_mini.flux_x[0] = elem_mini.state[1];
 //	hfv[0][1] * Vel + 0.5 * a * a * hfv[0][0]
-	elem_mini.flux_x[1] = elem_mini.state[1] * vel
-			+ .5 * a * a * elem_mini.state[0];
+	elem_mini.flux_x[1] = elem_mini.state[1] * vel + .5 * a * a * elem_mini.state[0];
 //	hfv[0][2] * Vel
 	elem_mini.flux_x[2] = elem_mini.state[2] * vel;
 
@@ -530,8 +513,7 @@ void compute_flux(Elem_Mini &elem_mini) {
 //	hfv[0][1] * Vel + 0.5 * a * a * hfv[0][0]
 	elem_mini.flux_y[1] = elem_mini.state[1] * vel;
 //	hfv[0][2] * Vel
-	elem_mini.flux_y[2] = elem_mini.state[2] * vel
-			+ .5 * a * a * elem_mini.state[0];
+	elem_mini.flux_y[2] = elem_mini.state[2] * vel + .5 * a * a * elem_mini.state[0];
 
 }
 
@@ -546,44 +528,50 @@ void perturb(HashTable* El_Table, int ithm, int state) {
 			while (currentPtr) {
 				Curr_El = (Element*) (currentPtr->value);
 				currentPtr = currentPtr->next;
-				if (Curr_El->get_adapted_flag() > 0
-						&& Curr_El->get_ithelem() == ithm) {
+				if (Curr_El->get_adapted_flag() > 0 && Curr_El->get_ithelem() == ithm) {
 					*(Curr_El->get_prev_state_vars() + state) += 1.e-8;
 				}
 			}
 		}
 }
 
-void check_diff(std::vector<Elem_Mini> &vec_elem,
-		std::vector<Elem_Mini> &vec_elem1, const int elem) {
+void check_diff(std::vector<Elem_Mini> &vec_elem, std::vector<Elem_Mini> &vec_elem1,
+    const int elem) {
 
 	cout << "prev_states before and after perturb:  \n";
 	for (int j = 0; j < NUM_STATE_VARS; ++j)
 		cout << setprecision(16) << " " << vec_elem[elem].prev_state[j] << " "
-				<< vec_elem1[elem].prev_state[j];
+		    << vec_elem1[elem].prev_state[j];
 	cout << endl;
 
 	cout << "states before and after perturb:  \n";
 	for (int j = 0; j < NUM_STATE_VARS; ++j)
-		cout << setprecision(16) << " " << vec_elem[elem].state[j] << " "
-				<< vec_elem1[elem].state[j];
+		cout << setprecision(16) << " " << vec_elem[elem].state[j] << " " << vec_elem1[elem].state[j];
 	cout << endl;
+	/*
+	 cout << "fluxes of before and after perturb:  \n";
+	 for (int i = 0; i < 4; ++i) {
+	 for (int j = 0; j < NUM_STATE_VARS; ++j)
+	 cout << setprecision(16) << " " << vec_elem[elem].fluxes(i, j) << " "
+	 << vec_elem1[elem].fluxes(i, j);
+	 cout << endl;
+	 }
 
-	cout << "fluxes of before and after perturb:  \n";
-	for (int i = 0; i < 4; ++i) {
-		for (int j = 0; j < NUM_STATE_VARS; ++j)
-			cout << setprecision(16) << " " << vec_elem[elem].fluxes(i, j)
-					<< " " << vec_elem1[elem].fluxes(i, j);
-		cout << endl;
-	}
-	cout << "Jacobian:  \n";
-	for (int i = 0; i < 4; ++i) {
-		for (int j = 0; j < NUM_STATE_VARS; ++j)
-			cout << setprecision(16) << " "
-					<< (vec_elem1[elem].fluxes(i, j)
-							- vec_elem[elem].fluxes(i, j)) / 1.e-8;
-		cout << endl;
-	}
+	 cout << "Jacobian:  \n";
+	 for (int i = 0; i < 4; ++i) {
+	 for (int j = 0; j < NUM_STATE_VARS; ++j)
+	 cout << setprecision(16) << " "
+	 << (vec_elem1[elem].fluxes(i, j) - vec_elem[elem].fluxes(i, j)) / 1.e-8;
+	 cout << endl;
+	 }*/
+
+	cout << "hslope " << vec_elem[elem].hslope[0] << "  ,  " << vec_elem[elem].hslope[1] << " \n";
+
+	cout << "hslope sensitivity:  \n";
+	for (int i = 0; i < 2; ++i)
+		cout << setprecision(16) << " "
+		    << (vec_elem1[elem].hslope[i] - vec_elem[elem].hslope[i]) / 1.e-8;
+	cout << endl;
 
 }
 
@@ -599,8 +587,7 @@ void print_ithm(HashTable* El_Table, int ithm, int ind_neigh) {
 			while (currentPtr) {
 				Curr_El = (Element*) (currentPtr->value);
 				currentPtr = currentPtr->next;
-				if (Curr_El->get_adapted_flag() > 0
-						&& Curr_El->get_ithelem() == ithm) {
+				if (Curr_El->get_adapted_flag() > 0 && Curr_El->get_ithelem() == ithm) {
 
 					cout << "prev_state_vars: \n";
 					for (int i = 0; i < NUM_STATE_VARS; ++i)
@@ -619,41 +606,53 @@ void print_ithm(HashTable* El_Table, int ithm, int ind_neigh) {
 
 					cout << "d_state_vars_y : \n";
 					for (int i = 0; i < NUM_STATE_VARS; ++i)
-						cout
-								<< *(Curr_El->get_d_state_vars()
-										+ NUM_STATE_VARS + i) << "  ";
+						cout << *(Curr_El->get_d_state_vars() + NUM_STATE_VARS + i) << "  ";
 					cout << endl;
+					/*
+					 FluxJac& flux_jac = Curr_El->get_flx_jac_cont();
+					 cout << "jacobian flux : \n";
 
-					FluxJac& flux_jac = Curr_El->get_flx_jac_cont();
-					cout << "jacobian flux : \n";
+					 cout << "  x_negative: \n";
+					 for (int i = 0; i < NUM_STATE_VARS; ++i) {
+					 for (int j = 0; j < NUM_STATE_VARS; ++j)
+					 cout << (flux_jac(0, 0, ind_neigh))(i, j) << "  ";
+					 cout << "\n";
+					 }
 
-					cout << "  x_negative: \n";
-					for (int i = 0; i < NUM_STATE_VARS; ++i) {
-						for (int j = 0; j < NUM_STATE_VARS; ++j)
-							cout << (flux_jac(0, 0, ind_neigh))(i, j) << "  ";
-						cout << "\n";
-					}
+					 cout << "  x_positive: \n";
+					 for (int i = 0; i < NUM_STATE_VARS; ++i) {
+					 for (int j = 0; j < NUM_STATE_VARS; ++j)
+					 cout << (flux_jac(0, 1, ind_neigh))(i, j) << "  ";
+					 cout << "\n";
+					 }
 
-					cout << "  x_positive: \n";
-					for (int i = 0; i < NUM_STATE_VARS; ++i) {
-						for (int j = 0; j < NUM_STATE_VARS; ++j)
-							cout << (flux_jac(0, 1, ind_neigh))(i, j) << "  ";
-						cout << "\n";
-					}
+					 cout << "  y_negative: \n";
+					 for (int i = 0; i < NUM_STATE_VARS; ++i) {
+					 for (int j = 0; j < NUM_STATE_VARS; ++j)
+					 cout << (flux_jac(1, 0, ind_neigh))(i, j) << "  ";
+					 cout << "\n";
+					 }
 
-					cout << "  y_negative: \n";
-					for (int i = 0; i < NUM_STATE_VARS; ++i) {
-						for (int j = 0; j < NUM_STATE_VARS; ++j)
-							cout << (flux_jac(1, 0, ind_neigh))(i, j) << "  ";
-						cout << "\n";
-					}
+					 cout << "  y_positive: \n";
+					 for (int i = 0; i < NUM_STATE_VARS; ++i) {
+					 for (int j = 0; j < NUM_STATE_VARS; ++j)
+					 cout << (flux_jac(1, 1, ind_neigh))(i, j) << "  ";
+					 cout << "\n";
+					 }*/
 
-					cout << "  y_positive: \n";
-					for (int i = 0; i < NUM_STATE_VARS; ++i) {
-						for (int j = 0; j < NUM_STATE_VARS; ++j)
-							cout << (flux_jac(1, 1, ind_neigh))(i, j) << "  ";
-						cout << "\n";
-					}
+					cout << "hslope " << *(Curr_El->get_d_state_vars()) << " , "
+					    << *(Curr_El->get_d_state_vars() + NUM_STATE_VARS) << endl;
+
+					Matrix<double, 2, 5>& h_slope_sens = Curr_El->get_hslope_sens();
+
+					cout << "hslope derivatives: \n";
+					cout << " x sensitivity: \n";
+					for (int i = 0; i < 5; ++i)
+						cout << h_slope_sens(0, i) << "  ";
+					cout << "\n y sensitivity: \n";
+					for (int i = 0; i < 5; ++i)
+						cout << h_slope_sens(1, i) << "  ";
+					cout << "\n";
 
 				}
 			}
