@@ -72,6 +72,7 @@ int main(int argc, char *argv[]) {
 	double doublekeyrange[2] = { (double) max_unsigned_int_size, (double) max_unsigned_int_size };
 	double XRange[2] = { -2., 2. };
 	double YRange[2] = { -2., 2. };
+	double dxy[2]= { .25, .25 };
 
 	int material_count = 0;
 	char **matnames = NULL;
@@ -101,6 +102,7 @@ int main(int argc, char *argv[]) {
 	PileProps pileprops;
 	FluxProps fluxprops;
 	OutLine outline;
+	outline.init(dxy,4,XRange,YRange);
 	DISCHARGE discharge;
 	int orderflag = 1;
 
@@ -147,7 +149,7 @@ int main(int argc, char *argv[]) {
 
 //	calc_adjoint(&mesh_ctx, &prop_ctx);
 
-	const int test_elem = 12;
+	const int test_elem = 15;
 	const int ind_neigh = 2;
 
 	print_ithm(El_Table, test_elem, ind_neigh);
@@ -156,13 +158,13 @@ int main(int argc, char *argv[]) {
 
 	print_Elem_Table(El_Table, NodeTable, 0, 1);
 
-	for (int i = 0; i < 1; ++i) {
+	for (int i = 0; i < NUM_STATE_VARS; ++i) {
 
 		timeprops.inittime(1, .01, .01, .01, 1.);
 
 		initialize_flow(El_Table);
 
-		const int perturb_elem = 10;
+		const int perturb_elem = 15;
 
 		perturb(El_Table, perturb_elem, i);
 
@@ -563,14 +565,19 @@ void check_diff(std::vector<Elem_Mini> &vec_elem, std::vector<Elem_Mini> &vec_el
 	 cout << setprecision(16) << " "
 	 << (vec_elem1[elem].fluxes(i, j) - vec_elem[elem].fluxes(i, j)) / 1.e-8;
 	 cout << endl;
-	 }*/
+	 }
 
-	cout << "hslope " << vec_elem[elem].hslope[0] << "  ,  " << vec_elem[elem].hslope[1] << " \n";
+	 cout << "hslope " << vec_elem[elem].hslope[0] << "  ,  " << vec_elem[elem].hslope[1] << " \n";
 
-	cout << "hslope sensitivity:  \n";
-	for (int i = 0; i < 2; ++i)
-		cout << setprecision(16) << " "
-		    << (vec_elem1[elem].hslope[i] - vec_elem[elem].hslope[i]) / 1.e-8;
+	 cout << "hslope sensitivity:  \n";
+	 for (int i = 0; i < 2; ++i)
+	 cout << setprecision(16) << " "
+	 << (vec_elem1[elem].hslope[i] - vec_elem[elem].hslope[i]) / 1.e-8;
+	 cout << endl;*/
+
+	cout << "jacobian:  \n";
+	for (int j = 0; j < NUM_STATE_VARS; ++j)
+		cout << setprecision(16) << " " << (vec_elem1[elem].state[j] - vec_elem[elem].state[j]) / 1.e-8;
 	cout << endl;
 
 }
@@ -638,24 +645,33 @@ void print_ithm(HashTable* El_Table, int ithm, int ind_neigh) {
 					 for (int j = 0; j < NUM_STATE_VARS; ++j)
 					 cout << (flux_jac(1, 1, ind_neigh))(i, j) << "  ";
 					 cout << "\n";
-					 }*/
+					 }
 
-					cout << "hslope " << *(Curr_El->get_d_state_vars()) << " , "
-					    << *(Curr_El->get_d_state_vars() + NUM_STATE_VARS) << endl;
+					 cout << "hslope " << *(Curr_El->get_d_state_vars()) << " , "
+					 << *(Curr_El->get_d_state_vars() + NUM_STATE_VARS) << endl;
 
-					Matrix<double, 2, 5>& h_slope_sens = Curr_El->get_hslope_sens();
+					 Matrix<double, 2, 5>& h_slope_sens = Curr_El->get_hslope_sens();
 
-					cout << "hslope derivatives: \n";
-					cout << " x sensitivity: \n";
-					for (int i = 0; i < 5; ++i)
-						cout << h_slope_sens(0, i) << "  ";
-					cout << "\n y sensitivity: \n";
-					for (int i = 0; i < 5; ++i)
-						cout << h_slope_sens(1, i) << "  ";
-					cout << "\n";
+					 cout << "hslope derivatives: \n";
+					 cout << " x sensitivity: \n";
+					 for (int i = 0; i < 5; ++i)
+					 cout << h_slope_sens(0, i) << "  ";
+					 cout << "\n y sensitivity: \n";
+					 for (int i = 0; i < 5; ++i)
+					 cout << h_slope_sens(1, i) << "  ";
+					 cout << "\n";*/
+					Vec_Mat<9>& jacobian = Curr_El->get_jacobian();
 
+					cout << "jacobians: \n";
+					for (int i = 0; i < EFF_ELL; ++i) {
+						cout << " for element " << i << endl;
+						for (int j = 0; j < NUM_STATE_VARS; ++j) {
+							for (int k = 0; k < NUM_STATE_VARS; ++k)
+								cout << jacobian(i)(j, k) << "  ";
+							cout << endl;
+						}
+					}
 				}
 			}
 		}
-
 }
